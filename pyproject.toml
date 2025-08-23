@@ -1,0 +1,11 @@
+[project]
+name = "airmonitoring"
+version = "0.1.0"
+description = "AirGradient data collection and analysis"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "marimo[lsp,recommended]>=0.15.0",
+    "requests",
+    "python-dotenv",
+]
