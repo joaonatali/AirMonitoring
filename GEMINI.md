@@ -10,14 +10,14 @@ The primary goal of this project is to download and analyze air quality data fro
 
 - **Method:** The project uses the AirMonitoring Public API, which requires an API token for authentication.
 - **Storage:** The API token is stored in a `.env` file in the project root.
-- **Variable:** The token should be assigned to the `AirMonitoring_TOKEN` environment variable.
+- **Variable:** The token should be assigned to the `AIRGRADIENT_TOKEN` environment variable.
 
 ## Data Fetching
 
 - **Identifier:** Data is fetched using a specific `locationId`.
 - **Storage:** The location ID is also stored in the `.env` file.
-- **Variable:** The location ID should be assigned to the `AirMonitoring_LOCATION_ID` environment variable.
-- **Script:** The `AirMonitoring_downloader.py` script is responsible for fetching the data.
+- **Variable:** The location ID should be assigned to the `AIRGRADIENT_LOCATION_ID` environment variable.
+- **Script:** The `airgradient_downloader.py` script is responsible for fetching the data.
 
 ## Dependencies
 
