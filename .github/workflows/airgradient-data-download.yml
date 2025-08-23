@@ -5,6 +5,9 @@ on:
     - cron: '0 0 */10 * *' # Runs every 10 days
   workflow_dispatch: # Allows manual triggering
 
+permissions:
+  contents: write
+
 jobs:
   download-data:
     runs-on: ubuntu-latest
