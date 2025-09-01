@@ -3,7 +3,7 @@ revision = 3
 requires-python = ">=3.12"
 
 [[package]]
-name = "airgradient"
+name = "airmonitoring"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
@@ -12,9 +12,23 @@ dependencies = [
     { name = "requests" },
 ]
 
+[package.dev-dependencies]
+ci = [
+    { name = "polars" },
+    { name = "python-dotenv" },
+    { name = "requests" },
+]
+
 [package.metadata]
 requires-dist = [
     { name = "marimo", extras = ["lsp", "recommended"], specifier = ">=0.15.0" },
+    { name = "python-dotenv" },
+    { name = "requests" },
+]
+
+[package.metadata.requires-dev]
+ci = [
+    { name = "polars" },
     { name = "python-dotenv" },
     { name = "requests" },
 ]

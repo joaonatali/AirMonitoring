@@ -9,3 +9,10 @@ dependencies = [
     "requests",
     "python-dotenv",
 ]
+
+[dependency-groups]
+ci = [
+    "requests",
+    "python-dotenv",
+    "polars",
+]

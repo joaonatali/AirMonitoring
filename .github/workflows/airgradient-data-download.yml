@@ -2,7 +2,7 @@ name: Download AirGradient Data
 
 on:
   schedule:
-    - cron: '0 0 */10 * *' # Runs every 10 days
+    - cron: '0 23 * * 0' # Runs every Sunday at 11PM
   workflow_dispatch: # Allows manual triggering
 
 permissions:
@@ -15,19 +15,17 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.13'
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
 
-      - name: Install dependencies
-        run: pip install -r actions-requirements.txt
+      - name: Set up Python
+        run: uv python install
 
       - name: Download data
         env:
           AIRGRADIENT_TOKEN: ${{ secrets.AIRGRADIENT_TOKEN }}
           AIRGRADIENT_LOCATION_ID: ${{ secrets.AIRGRADIENT_LOCATION_ID }}
-        run: python airgradient_downloader.py
+        run: uv run --only-group ci python airgradient_downloader.py
 
       - name: Commit and push if it changed
         run: |-
