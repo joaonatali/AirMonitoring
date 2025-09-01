@@ -14,6 +14,8 @@ load_dotenv()
 AIRGRADIENT_TOKEN = os.getenv("AIRGRADIENT_TOKEN")
 AIRGRADIENT_LOCATION_ID = os.getenv("AIRGRADIENT_LOCATION_ID")
 MOTHERDUCK_TOKEN = os.getenv("MOTHERDUCK_TOKEN")
+MOTHERDUCK_DB_NAME = os.getenv("MOTHERDUCK_DB_NAME")
+MOTHERDUCK_TABLE_NAME = os.getenv("MOTHERDUCK_TABLE_NAME")
 
 app = typer.Typer()
 
@@ -94,18 +96,27 @@ def save_dataframe_to_csv(df: pl.DataFrame) -> Path | None:
         return None
 
 
-def upsert_dataframe_to_motherduck(df: pl.DataFrame, motherduck_token: str) -> bool:
-    """Upserts a DataFrame to the airgradient_measures table in MotherDuck."""
+def upsert_dataframe_to_motherduck(
+    df: pl.DataFrame,
+    motherduck_token: str,
+    db_name: str | None,
+    table_name: str,
+) -> bool:
+    """Upserts a DataFrame to a specified table in MotherDuck."""
     if not motherduck_token:
         print("MOTHERDUCK_TOKEN not set. Skipping MotherDuck upload.")
         return False
 
-    print("Pushing data to MotherDuck...")
+    print(
+        f"Pushing data to MotherDuck table {table_name} in database {db_name or 'default'}..."
+    )
+
     try:
-        con = duckdb.connect(f"md:?motherduck_token={motherduck_token}")
-        con.execute(
-            """
-            CREATE TABLE IF NOT EXISTS airgradient_measures (
+        db_string = f"md:{db_name}" if db_name else "md:"
+        con = duckdb.connect(f"{db_string}?motherduck_token={motherduck_token}")
+
+        create_table_query = f"""
+            CREATE TABLE IF NOT EXISTS {table_name} (
                 locationId INTEGER,
                 locationName VARCHAR,
                 pm01 DOUBLE,
@@ -133,7 +144,7 @@ def upsert_dataframe_to_motherduck(df: pl.DataFrame, motherduck_token: str) -> b
                 PRIMARY KEY (locationId, timestamp, serialno)
             )
         """
-        )
+        con.execute(create_table_query)
 
         column_names = df.columns
         primary_keys = ["locationId", "timestamp", "serialno"]
@@ -146,13 +157,13 @@ def upsert_dataframe_to_motherduck(df: pl.DataFrame, motherduck_token: str) -> b
         )
 
         upsert_query = f"""
-        INSERT INTO airgradient_measures
+        INSERT INTO {table_name}
         SELECT * FROM df
         ON CONFLICT (locationId, timestamp, serialno) DO UPDATE SET
         {update_clause}
         """
         con.execute(upsert_query)
-        print("Data successfully upserted to MotherDuck.")
+        print(f"Data successfully upserted to MotherDuck table {table_name}.")
         return True
     except Exception as e:
         print(f"Error pushing data to MotherDuck: {e}")
@@ -187,10 +198,14 @@ def main(
         if save_csv:
             save_dataframe_to_csv(df)
         if to_motherduck:
-            if MOTHERDUCK_TOKEN:
-                upsert_dataframe_to_motherduck(df, MOTHERDUCK_TOKEN)
+            if MOTHERDUCK_TOKEN and MOTHERDUCK_TABLE_NAME:
+                upsert_dataframe_to_motherduck(
+                    df, MOTHERDUCK_TOKEN, MOTHERDUCK_DB_NAME, MOTHERDUCK_TABLE_NAME
+                )
             else:
-                print("MOTHERDUCK_TOKEN is not set. Cannot upload to MotherDuck.")
+                print(
+                    "MOTHERDUCK_TOKEN and MOTHERDUCK_TABLE_NAME must be set to upload to MotherDuck."
+                )
 
 
 if __name__ == "__main__":
