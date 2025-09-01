@@ -8,26 +8,22 @@ version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
     { name = "marimo", extra = ["lsp", "recommended"] },
-    { name = "python-dotenv" },
-    { name = "requests" },
 ]
 
 [package.dev-dependencies]
 ci = [
+    { name = "duckdb" },
     { name = "polars" },
     { name = "python-dotenv" },
     { name = "requests" },
 ]
 
 [package.metadata]
-requires-dist = [
-    { name = "marimo", extras = ["lsp", "recommended"], specifier = ">=0.15.0" },
-    { name = "python-dotenv" },
-    { name = "requests" },
-]
+requires-dist = [{ name = "marimo", extras = ["lsp", "recommended"], specifier = ">=0.15.0" }]
 
 [package.metadata.requires-dev]
 ci = [
+    { name = "duckdb" },
     { name = "polars" },
     { name = "python-dotenv" },
     { name = "requests" },

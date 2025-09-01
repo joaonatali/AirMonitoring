@@ -6,13 +6,12 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "marimo[lsp,recommended]>=0.15.0",
-    "requests",
-    "python-dotenv",
 ]
 
 [dependency-groups]
 ci = [
     "requests",
     "python-dotenv",
+    "duckdb",
     "polars",
 ]

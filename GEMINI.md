@@ -19,8 +19,9 @@ The primary goal of this project is to download and analyze air quality data fro
 - **Variable:** The location ID should be assigned to the `AIRGRADIENT_LOCATION_ID` environment variable.
 - **Script:** The `airgradient_downloader.py` script is responsible for fetching the data.
 
-## Dependencies
+## Development
 
 - **Language:** Python
-- **Libraries:** `requests` for making API calls and `python-dotenv` for managing environment variables.
-- **Management:** Dependencies are managed using `uv` and are listed in the `pyproject.toml` file.
+- **Dependencies:** Dependencies are listed in the `pyproject.toml` file.
+- **Dependency Management:** `uv` is used for dependency management.
+- **Running Scripts:** Scripts should be run using `uv run`. For example, to run the data downloader script, use the command `uv run python airgradient_downloader.py`.
