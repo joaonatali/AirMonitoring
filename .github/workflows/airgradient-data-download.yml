@@ -25,7 +25,10 @@ jobs:
         env:
           AIRGRADIENT_TOKEN: ${{ secrets.AIRGRADIENT_TOKEN }}
           AIRGRADIENT_LOCATION_ID: ${{ secrets.AIRGRADIENT_LOCATION_ID }}
-        run: uv run --only-group ci python airgradient_downloader.py --save-csv
+          MOTHERDUCK_TOKEN: ${{ secrets.MOTHERDUCK_TOKEN }}
+          MOTHERDUCK_DB_NAME: ${{ secrets.MOTHERDUCK_DB_NAME }}
+          MOTHERDUCK_TABLE_NAME: ${{ secrets.MOTHERDUCK_TABLE_NAME }}
+        run: uv run --only-group ci python airgradient_downloader.py --save-csv --to-motherduck
 
       - name: Commit and push if it changed
         run: |-
