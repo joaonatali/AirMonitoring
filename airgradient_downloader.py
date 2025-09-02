@@ -112,6 +112,7 @@ def upsert_dataframe_to_motherduck(
     )
 
     try:
+        df = df.with_columns(updated_at=datetime.now())
         db_string = f"md:{db_name}" if db_name else "md:"
         con = duckdb.connect(f"{db_string}?motherduck_token={motherduck_token}")
 
@@ -141,6 +142,7 @@ def upsert_dataframe_to_motherduck(
                 tvocIndex DOUBLE,
                 noxIndex INTEGER,
                 datapoints INTEGER,
+                updated_at TIMESTAMP,
                 PRIMARY KEY (locationId, timestamp, serialno)
             )
         """
