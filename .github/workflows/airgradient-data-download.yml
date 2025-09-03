@@ -21,14 +21,19 @@ jobs:
       - name: Set up Python
         run: uv python install
 
-      - name: Download data
+      - name: Download data (conditional flags)
         env:
           AIRGRADIENT_TOKEN: ${{ secrets.AIRGRADIENT_TOKEN }}
           AIRGRADIENT_LOCATION_ID: ${{ secrets.AIRGRADIENT_LOCATION_ID }}
           MOTHERDUCK_TOKEN: ${{ secrets.MOTHERDUCK_TOKEN }}
           MOTHERDUCK_DB_NAME: ${{ secrets.MOTHERDUCK_DB_NAME }}
           MOTHERDUCK_TABLE_NAME: ${{ secrets.MOTHERDUCK_TABLE_NAME }}
-        run: uv run --only-group ci python airgradient_downloader.py --save-csv --to-motherduck
+        run: |
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            uv run --only-group ci python airgradient_downloader.py --save-csv --to-motherduck
+          else
+            uv run --only-group ci python airgradient_downloader.py
+          fi
 
       - name: Commit and push if it changed
         run: |-
