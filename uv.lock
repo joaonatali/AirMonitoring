@@ -8,6 +8,7 @@ version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
     { name = "marimo", extra = ["lsp", "recommended"] },
+    { name = "python-dotenv" },
 ]
 
 [package.dev-dependencies]
@@ -20,7 +21,10 @@ ci = [
 ]
 
 [package.metadata]
-requires-dist = [{ name = "marimo", extras = ["lsp", "recommended"], specifier = ">=0.15.0" }]
+requires-dist = [
+    { name = "marimo", extras = ["lsp", "recommended"], specifier = ">=0.15.0" },
+    { name = "python-dotenv" },
+]
 
 [package.metadata.requires-dev]
 ci = [
