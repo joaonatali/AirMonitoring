@@ -56,6 +56,33 @@ def transform_legacy_schema(df: pl.DataFrame) -> pl.DataFrame:
             pl.lit(None, dtype=pl.Utf8).alias("firmwareVersion"),
         ]
     )
+    column_order = [
+        "locationId",
+        "locationName",
+        "pm01",
+        "pm02",
+        "pm10",
+        "pm01_corrected",
+        "pm02_corrected",
+        "pm10_corrected",
+        "pm003Count",
+        "atmp",
+        "rhum",
+        "rco2",
+        "atmp_corrected",
+        "rhum_corrected",
+        "rco2_corrected",
+        "tvoc",
+        "wifi",
+        "timestamp",
+        "serialno",
+        "model",
+        "firmwareVersion",
+        "tvocIndex",
+        "noxIndex",
+        "datapoints",
+    ]
+    df = df.select(column_order)
     return df
 
 
