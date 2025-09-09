@@ -1,5 +1,5 @@
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 import polars as pl
 import duckdb
@@ -76,7 +76,9 @@ def fetch_airgradient_data_to_dataframe(
         return None
 
     df = pl.DataFrame(data)
-    df = df.with_columns(pl.col("timestamp").str.to_datetime())
+    df = df.with_columns(
+        pl.col("timestamp").str.to_datetime().dt.replace_time_zone("UTC")
+    )
     print("Successfully fetched data into DataFrame.")
     return df
 
@@ -112,7 +114,7 @@ def upsert_dataframe_to_motherduck(
     )
 
     try:
-        df = df.with_columns(updated_at=datetime.now())
+        df = df.with_columns(updated_at=datetime.now(timezone.utc))
         db_string = f"md:{db_name}" if db_name else "md:"
         con = duckdb.connect(f"{db_string}?motherduck_token={motherduck_token}")
 
@@ -135,14 +137,14 @@ def upsert_dataframe_to_motherduck(
                 rco2_corrected DOUBLE,
                 tvoc DOUBLE,
                 wifi DOUBLE,
-                timestamp TIMESTAMP,
+                timestamp TIMESTAMP WITH TIME ZONE,
                 serialno VARCHAR,
                 model VARCHAR,
                 firmwareVersion VARCHAR,
                 tvocIndex DOUBLE,
                 noxIndex INTEGER,
                 datapoints INTEGER,
-                updated_at TIMESTAMP,
+                updated_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
                 PRIMARY KEY (locationId, timestamp, serialno)
             )
         """
