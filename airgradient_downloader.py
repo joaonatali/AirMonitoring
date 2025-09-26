@@ -53,7 +53,7 @@ def fetch_airgradient_data_to_dataframe(
     print(f"\nUsing Location ID: {location_id}")
     print(f"Using Token (first 5 chars): {token[:5]}...")
 
-    now = datetime.now()
+    now = datetime.now(timezone.utc)
     url = f"https://api.airgradient.com/public/api/v1/locations/{location_id}/measures/past"
     params = {
         "token": token,
@@ -76,9 +76,7 @@ def fetch_airgradient_data_to_dataframe(
         return None
 
     df = pl.DataFrame(data)
-    df = df.with_columns(
-        pl.col("timestamp").str.to_datetime().dt.replace_time_zone("UTC")
-    )
+    df = df.with_columns(pl.col("timestamp").str.to_datetime(time_zone="UTC"))
     print("Successfully fetched data into DataFrame.")
     return df
 
@@ -198,7 +196,8 @@ def main(
     df = fetch_airgradient_data_to_dataframe(AIRGRADIENT_TOKEN, AIRGRADIENT_LOCATION_ID)
 
     if df is not None:
-        print(df.head(5))
+        with pl.Config(tbl_cols=-1):
+            print(df.tail(5))
         if save_csv:
             save_dataframe_to_csv(df)
         if to_motherduck:
