@@ -7,13 +7,21 @@ requires-python = ">=3.12"
 dependencies = [
     "marimo[lsp,recommended]>=0.15.0",
     "python-dotenv",
+    "duckdb<1.4",
+    "polars",
+    "pyarrow",
+    "requests",
+    "typer",
+    "vegafusion[embed]",
+    "vl-convert-python",
+    "ipykernel",
 ]
 
 [dependency-groups]
 ci = [
     "requests",
     "python-dotenv",
-    "duckdb",
+    "duckdb<1.4",
     "polars",
     "pyarrow",
     "typer",
