@@ -27,10 +27,10 @@ def test_airgradient_token() -> bool:
 
     print("Testing AirGradient API token...")
     url = "https://api.airgradient.com/public/api/v1/locations/measures/current"
-    params = {
+    params: dict[str, str] = {
         "token": AIRGRADIENT_TOKEN,
     }
-    headers = {
+    headers: dict[str, str] = {
         "Content-Type": "application/json",
     }
 
@@ -53,9 +53,9 @@ def fetch_airgradient_data_to_dataframe(
     print(f"\nUsing Location ID: {location_id}")
     print(f"Using Token (first 5 chars): {token[:5]}...")
 
-    now = datetime.now(timezone.utc)
-    url = f"https://api.airgradient.com/public/api/v1/locations/{location_id}/measures/past"
-    params = {
+    now: datetime = datetime.now(timezone.utc)
+    url: str = f"https://api.airgradient.com/public/api/v1/locations/{location_id}/measures/past"
+    params: dict[str, str] = {
         "token": token,
         "from": (now - timedelta(days=10)).strftime("%Y%m%dT%H%M%SZ"),
         "to": now.strftime("%Y%m%dT%H%M%SZ"),
@@ -76,7 +76,9 @@ def fetch_airgradient_data_to_dataframe(
         return None
 
     df = pl.DataFrame(data)
-    df = df.with_columns(pl.col("timestamp").str.to_datetime(time_zone="UTC"))
+    df: pl.DataFrame = df.with_columns(
+        pl.col("timestamp").str.to_datetime(time_zone="UTC")
+    )
     print("Successfully fetched data into DataFrame.")
     return df
 
@@ -86,8 +88,8 @@ def save_dataframe_to_csv(df: pl.DataFrame) -> Path | None:
     try:
         data_dir = Path("data")
         data_dir.mkdir(exist_ok=True)
-        today = datetime.now().strftime("%Y-%m-%d")
-        filename = data_dir / f"{today}.csv"
+        today: str = datetime.now().strftime("%Y-%m-%d")
+        filename: Path = data_dir / f"{today}.csv"
         df.write_csv(filename)
         print(f"Data successfully saved to {filename}")
         return filename
@@ -113,8 +115,10 @@ def upsert_dataframe_to_motherduck(
 
     try:
         df = df.with_columns(updated_at=datetime.now(timezone.utc))
-        db_string = f"md:{db_name}" if db_name else "md:"
-        con = duckdb.connect(f"{db_string}?motherduck_token={motherduck_token}")
+        db_string: str = f"md:{db_name}" if db_name else "md:"
+        con: duckdb.DuckDBPyConnection = duckdb.connect(
+            f"{db_string}?motherduck_token={motherduck_token}"
+        )
 
         create_table_query = f"""
             CREATE TABLE IF NOT EXISTS {table_name} (
@@ -148,9 +152,9 @@ def upsert_dataframe_to_motherduck(
         """
         con.execute(create_table_query)
 
-        column_names = df.columns
-        primary_keys = ["locationId", "timestamp", "serialno"]
-        update_clause = ", ".join(
+        column_names: list[str] = df.columns
+        primary_keys: list[str] = ["locationId", "timestamp", "serialno"]
+        update_clause: str = ", ".join(
             [
                 f"{col} = excluded.{col}"
                 for col in column_names
@@ -158,7 +162,7 @@ def upsert_dataframe_to_motherduck(
             ]
         )
 
-        upsert_query = f"""
+        upsert_query: str = f"""
         INSERT INTO {table_name}
         SELECT * FROM df
         ON CONFLICT (locationId, timestamp, serialno) DO UPDATE SET
@@ -193,7 +197,9 @@ def main(
             "AIRGRADIENT_TOKEN and AIRGRADIENT_LOCATION_ID must be set in the .env file."
         )
 
-    df = fetch_airgradient_data_to_dataframe(AIRGRADIENT_TOKEN, AIRGRADIENT_LOCATION_ID)
+    df: pl.DataFrame | None = fetch_airgradient_data_to_dataframe(
+        AIRGRADIENT_TOKEN, AIRGRADIENT_LOCATION_ID
+    )
 
     if df is not None:
         with pl.Config(tbl_cols=-1):
