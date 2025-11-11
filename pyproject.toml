@@ -15,6 +15,7 @@ dependencies = [
     "vegafusion[embed]",
     "vl-convert-python",
     "ipykernel",
+    "numpy>=2.3.4",
 ]
 
 [dependency-groups]
