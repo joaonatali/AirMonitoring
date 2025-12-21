@@ -30,7 +30,12 @@ jobs:
           MOTHERDUCK_TABLE_NAME: ${{ secrets.MOTHERDUCK_TABLE_NAME }}
         run: |
           if [ "${{ github.event_name }}" = "schedule" ]; then
-            uv run --only-group ci python airgradient_downloader.py --save-csv --to-motherduck
+            if uv run --only-group ci python airgradient_downloader.py --to-motherduck; then
+              echo "MotherDuck upload succeeded; skipping CSV save."
+            else
+              echo "MotherDuck upload failed; saving CSV fallback."
+              uv run --only-group ci python airgradient_downloader.py --save-csv
+            fi
           else
             uv run --only-group ci python airgradient_downloader.py
           fi
