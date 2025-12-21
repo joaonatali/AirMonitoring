@@ -1,23 +1,25 @@
 # /// script
 # requires-python = ">=3.13"
 # dependencies = [
-#     "altair==5.5.0",
-#     "duckdb==1.4.1",
-#     "polars[pyarrow]==1.34.0",
-#     "pyarrow==21.0.0",
-#     "python-dotenv==1.1.1",
-#     "python-lsp-ruff==2.3.0",
-#     "python-lsp-server==1.13.1",
-#     "sqlglot==27.28.1",
-#     "vegafusion==2.0.3",
-#     "vl-convert-python==1.8.0",
-#     "websockets==15.0.1",
+#     "altair>=6.0.0",
+#     "duckdb>=1.4.3",
+#     "numpy>=2.3.5",
+#     "openai>=2.14.0",
+#     "polars[pyarrow]==1.36.1",
+#     "pyarrow>=22.0.0",
+#     "python-dotenv>=1.1.1",
+#     "python-lsp-ruff>=2.3.0",
+#     "python-lsp-server>=1.14.0",
+#     "sqlglot>=28.5.0",
+#     "vegafusion>=2.0.3",
+#     "vl-convert-python>=1.8.0",
+#     "websockets>=15.0.1",
 # ]
 # ///
 
 import marimo
 
-__generated_with = "0.16.0"
+__generated_with = "0.18.4"
 app = marimo.App(width="medium")
 
 with app.setup(hide_code=True):
@@ -35,7 +37,9 @@ with app.setup(hide_code=True):
 
 @app.cell(hide_code=True)
 def _():
-    mo.md(r"""# Air Monitoring Dashboard""")
+    mo.md(r"""
+    # Air Monitoring Dashboard
+    """)
     return
 
 
@@ -57,8 +61,9 @@ def _(airgradient_measures, con):
         	COUNT(*) AS nrows
         FROM airgradient_measures
         GROUP BY ALL
+        ORDER BY 1, 2, 3, 4 DESC
         """,
-        engine=con
+        engine=con,
     )
     return
 
@@ -69,7 +74,7 @@ def _(airgradient_measures, con):
         f"""
         SELECT COUNT(*) FROM airgradient_measures
         """,
-        engine=con
+        engine=con,
     )
     return
 
@@ -80,7 +85,7 @@ def _(airgradient_measures, con):
         f"""
         SELECT * FROM airgradient_measures
         """,
-        engine=con
+        engine=con,
     )
     return (data,)
 
@@ -167,20 +172,54 @@ def _(data, date_range, metric_selector, metrics, opacity_selector):
 
 @app.cell
 def _(data):
-    import numpy as np
-
     # Calculate outliers using IQR method on rco2
-    q1 = data["rco2"].quantile(0.15)
-    q3 = data["rco2"].quantile(0.85)
-    iqr = q3 - q1
-    lower_bound = q1 - 1.5 * iqr
-    upper_bound = q3 + 1.5 * iqr
+    _q1 = data["rco2"].quantile(0.15)
+    _q3 = data["rco2"].quantile(0.85)
+    _iqr = _q3 - _q1
+    _lower_bound = _q1 - 1.5 * _iqr
+    _upper_bound = _q3 + 1.5 * _iqr
 
-    rco2_outliers = data.filter(
-        (pl.col("rco2") < lower_bound) | (pl.col("rco2") > upper_bound)
+    _df_rco2 = (
+        data.select(["timestamp", "rco2"])
+        .with_columns(
+            ((pl.col("rco2") < _lower_bound) | (pl.col("rco2") > _upper_bound)).alias(
+                "is_outlier"
+            )
+        )
+        .sort("timestamp")
     )
 
-    rco2_outliers
+    base = (
+        alt.Chart(_df_rco2, title="rCO2 Time Series with Outliers Highlighted")
+        .mark_line(color="#2c7fb8", opacity=0.7)
+        .encode(
+            x=alt.X("timestamp:T", title="Timestamp"),
+            y=alt.Y("rco2:Q", title="rCO2"),
+            tooltip=[
+                alt.Tooltip("timestamp:T", title="Timestamp"),
+                alt.Tooltip("rco2:Q", title="rCO2"),
+            ],
+        )
+    )
+
+    outlier_points = (
+        alt.Chart(_df_rco2)
+        .mark_point(color="red", size=60)
+        .encode(
+            x="timestamp:T",
+            y="rco2:Q",
+            tooltip=[
+                alt.Tooltip("timestamp:T", title="Timestamp"),
+                alt.Tooltip("rco2:Q", title="rCO2"),
+                alt.Tooltip("is_outlier:N", title="Outlier"),
+            ],
+        )
+        .transform_filter(alt.datum.is_outlier)
+    )
+
+    chart = (base + outlier_points).properties(width=700, height=350).interactive()
+
+    chart
     return
 
 
