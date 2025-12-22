@@ -58,7 +58,11 @@ def _(airgradient_measures, con):
         f"""
         SELECT
             locationid, locationname, serialno, updated_at,
-        	COUNT(*) AS nrows
+            MIN(timestamp) AS min_ts,
+            MAX(timestamp) AS max_ts,
+            DATE_DIFF('day', min_ts, max_ts) AS span_days,
+        	COUNT(*) AS nrows,
+            SUM(datapoints) AS datapoints,
         FROM airgradient_measures
         GROUP BY ALL
         ORDER BY 1, 2, 3, 4 DESC
@@ -107,13 +111,66 @@ def _(data):
 
     date_range = mo.ui.date_range(start="2025-06-01", stop="2025-12-31")
 
+    updated_at_list = data["updated_at"].unique().sort(descending=True).to_list()
+    upload_date_selector = mo.ui.dropdown(updated_at_list, value=updated_at_list[0])
+
     opacity_selector = mo.ui.slider(0, 1, 0.1, 0.5)
-    return date_range, metric_selector, metrics, opacity_selector
+    return (
+        date_range,
+        metric_selector,
+        metrics,
+        opacity_selector,
+        upload_date_selector,
+    )
+
+
+@app.cell(hide_code=True)
+def _(data, metric_selector, metrics, opacity_selector, upload_date_selector):
+    _metrics_selected = (
+        metric_selector.value if len(metric_selector.value) >= 1 else [metrics[0]]
+    )
+    val_chart = (
+        alt.Chart(
+            data.filter(pl.col("updated_at") == upload_date_selector.value)
+            .select(["timestamp", *_metrics_selected])
+            .unpivot(
+                index="timestamp",
+                on=_metrics_selected,
+                variable_name="metric",
+                value_name="value",
+            )
+            .sort(["metric", "timestamp"]),
+            width=600,
+        )
+        .mark_line(opacity=opacity_selector.value)
+        .encode(
+            x="timestamp",
+            y="value",
+            color="metric",
+            tooltip="metric",
+        )
+        .interactive()
+    )
+
+    mo.md(
+        f"""
+        ## Validation of download batches
+
+        Upload_date: {upload_date_selector}
+
+        Metric: {metric_selector}
+
+        Opacity: {opacity_selector}
+
+        {mo.as_html(val_chart)}
+        """
+    )
+    return
 
 
 @app.cell(hide_code=True)
 def _(data, date_range, metric_selector, metrics, opacity_selector):
-    metrics_selected = (
+    _metrics_selected = (
         metric_selector.value if len(metric_selector.value) >= 1 else [metrics[0]]
     )
     ts_chart = (
@@ -122,10 +179,14 @@ def _(data, date_range, metric_selector, metrics, opacity_selector):
                 pl.col("timestamp") >= date_range.value[0],
                 pl.col("timestamp") <= date_range.value[1],
             )
-            .select(["timestamp", *metrics_selected])
+            .group_by(
+                ["locationId", "locationName", "serialno", "timestamp"]
+            )  # Note that there may be duplicated in the loading
+            .agg([pl.col(m).mean().alias(m) for m in _metrics_selected])
+            .select(["timestamp", *_metrics_selected])
             .unpivot(
                 index="timestamp",
-                on=metrics_selected,
+                on=_metrics_selected,
                 variable_name="metric",
                 value_name="value",
             )
@@ -182,9 +243,9 @@ def _(data):
     _df_rco2 = (
         data.select(["timestamp", "rco2"])
         .with_columns(
-            ((pl.col("rco2") < _lower_bound) | (pl.col("rco2") > _upper_bound)).alias(
-                "is_outlier"
-            )
+            (
+                (pl.col("rco2") < _lower_bound) | (pl.col("rco2") > _upper_bound)
+            ).alias("is_outlier")
         )
         .sort("timestamp")
     )
