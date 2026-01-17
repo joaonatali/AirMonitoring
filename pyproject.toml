@@ -5,9 +5,8 @@ description = "AirGradient data collection and analysis"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "marimo[lsp,recommended]>=0.15.0",
     "python-dotenv",
-    "duckdb<1.4",
+    "duckdb>=1.4",
     "polars",
     "pyarrow",
     "requests",
@@ -22,7 +21,7 @@ dependencies = [
 ci = [
     "requests",
     "python-dotenv",
-    "duckdb<1.4",
+    "duckdb<=1.4.3",
     "polars",
     "pyarrow",
     "typer",
