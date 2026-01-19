@@ -114,7 +114,6 @@ def upsert_dataframe_to_motherduck(
     )
 
     try:
-        df = df.with_columns(updated_at=datetime.now(timezone.utc))
         db_string: str = f"md:{db_name}" if db_name else "md:"
         con: duckdb.DuckDBPyConnection = duckdb.connect(
             f"{db_string}?motherduck_token={motherduck_token}"
@@ -161,10 +160,11 @@ def upsert_dataframe_to_motherduck(
                 if col not in primary_keys
             ]
         )
+        update_clause = f"{update_clause}, updated_at = excluded.updated_at"
 
         upsert_query: str = f"""
         INSERT INTO {table_name}
-        SELECT * FROM df
+        SELECT *, now() AS updated_at FROM df
         ON CONFLICT (locationId, timestamp, serialno) DO UPDATE SET
         {update_clause}
         """
