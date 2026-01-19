@@ -9,6 +9,8 @@ dependencies = [
     "duckdb>=1.4",
     "polars",
     "pyarrow",
+    "pytz",
+    "pyrefly",
     "requests",
     "typer",
     "vegafusion[embed]",
@@ -25,4 +27,7 @@ ci = [
     "polars",
     "pyarrow",
     "typer",
+    "awscli",
+    "pytz",
+    "pyrefly",
 ]

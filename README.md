@@ -63,6 +63,27 @@ The `motherduck_updater.py` script can be used to bulk-upload historical data fr
 uv run python motherduck_updater.py
 ```
 
+### Parquet Backups (MotherDuck → Blob Storage)
+
+The `parquet_sync.py` script dumps the full MotherDuck table to a single Parquet file and keeps the most recent backups.
+
+*   **Create a backup locally (keeps last 4):**
+    ```bash
+    uv run python parquet_sync.py backup --parquet-root data/backups --retain 4
+    ```
+
+*   **Create a backup in R2 (keeps last 4):**
+    ```bash
+    uv run python parquet_sync.py backup --parquet-root s3://my-bucket/airgradient --retain 4
+    ```
+    (Requires R2/AWS credentials in your environment.)
+
+*   **Validate the latest backup (row count growth + NULL checks):**
+    ```bash
+    uv run python parquet_sync.py validate --parquet-root s3://my-bucket/airgradient --min-new-rows 2000
+    ```
+    Use `--null-check-column` repeatedly to customize which columns must be non-null.
+
 ### Using `just`
 
 Install `just` with `brew install just`
@@ -76,8 +97,9 @@ This project includes a GitHub Actions workflow defined in `.github/workflows/ai
 
 This workflow automatically:
 1.  Downloads the latest data from the AirGradient API.
-2.  Saves the data to a new CSV file.
-3.  Uploads the data to the specified MotherDuck database.
+2.  Uploads the data to the specified MotherDuck database.
+3.  Creates a full-table Parquet backup in R2 (keeping the last 4).
+4.  Validates the latest Parquet backup (row count growth and NULL checks).
 
 For the workflow to run successfully, you must configure the following secrets in your GitHub repository settings:
 *   `AIRGRADIENT_TOKEN`
@@ -85,3 +107,8 @@ For the workflow to run successfully, you must configure the following secrets i
 *   `MOTHERDUCK_TOKEN`
 *   `MOTHERDUCK_DB_NAME`
 *   `MOTHERDUCK_TABLE_NAME`
+*   `R2_ACCOUNT_ID`
+*   `R2_ACCESS_KEY_ID`
+*   `R2_SECRET_ACCESS_KEY`
+*   `R2_BUCKET`
+*   `R2_PREFIX` (optional)

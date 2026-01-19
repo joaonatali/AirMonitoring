@@ -30,15 +30,43 @@ jobs:
           MOTHERDUCK_TABLE_NAME: ${{ secrets.MOTHERDUCK_TABLE_NAME }}
         run: |
           if [ "${{ github.event_name }}" = "schedule" ]; then
-            if uv run --only-group ci python airgradient_downloader.py --to-motherduck; then
-              echo "MotherDuck upload succeeded; skipping CSV save."
-            else
-              echo "MotherDuck upload failed; saving CSV fallback."
-              uv run --only-group ci python airgradient_downloader.py --save-csv
-            fi
+            uv run --only-group ci python airgradient_downloader.py --to-motherduck
           else
             uv run --only-group ci python airgradient_downloader.py
           fi
+
+      - name: Backup MotherDuck to R2
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        env:
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+          R2_PREFIX: ${{ secrets.R2_PREFIX }}
+          MOTHERDUCK_TOKEN: ${{ secrets.MOTHERDUCK_TOKEN }}
+          MOTHERDUCK_DB_NAME: ${{ secrets.MOTHERDUCK_DB_NAME }}
+          MOTHERDUCK_TABLE_NAME: ${{ secrets.MOTHERDUCK_TABLE_NAME }}
+        run: |
+          DEST="s3://${R2_BUCKET}"
+          if [ -n "${R2_PREFIX}" ]; then
+            DEST="${DEST}/${R2_PREFIX}"
+          fi
+          uv run --only-group ci python parquet_sync.py backup --parquet-root "${DEST}" --retain 4
+
+      - name: Validate latest backup
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        env:
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+          R2_PREFIX: ${{ secrets.R2_PREFIX }}
+        run: |
+          DEST="s3://${R2_BUCKET}"
+          if [ -n "${R2_PREFIX}" ]; then
+            DEST="${DEST}/${R2_PREFIX}"
+          fi
+          uv run --only-group ci python parquet_sync.py validate --parquet-root "${DEST}" --min-new-rows 2000
 
       - name: Commit and push if it changed
         run: |-

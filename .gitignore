@@ -19,3 +19,5 @@ wheels/
 .vscode
 __marimo__
 
+# Local parquet exports
+data/**/*.parquet
