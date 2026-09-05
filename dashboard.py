@@ -2,7 +2,8 @@
 # requires-python = ">=3.13"
 # dependencies = [
 #     "altair>=6.0.0",
-#     "duckdb>=1.4.3",
+#     "duckdb<=1.4.4",
+#     "marimo>=0.19.1",
 #     "numpy>=2.3.5",
 #     "openai>=2.14.0",
 #     "polars[pyarrow]==1.36.1",
@@ -19,7 +20,7 @@
 
 import marimo
 
-__generated_with = "0.18.4"
+__generated_with = "0.23.5"
 app = marimo.App(width="medium")
 
 with app.setup(hide_code=True):
@@ -87,7 +88,7 @@ def _(airgradient_measures, con):
 def _(airgradient_measures, con):
     data = mo.sql(
         f"""
-        SELECT * FROM airgradient_measures
+        SELECT * FROM airgradient_measures LIMIT 100
         """,
         engine=con,
     )
@@ -147,7 +148,7 @@ def _(data, metric_selector, metrics, opacity_selector, upload_date_selector):
             x="timestamp",
             y="value",
             color="metric",
-            tooltip="metric",
+            tooltip=["metric", "timestamp"],
         )
         .interactive()
     )
